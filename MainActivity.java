@@ -23,14 +23,18 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
-    private SensorManager mSensorManager;
-    private Sensor accelerometer;
-    private Sensor magneticField;
+    private static SensorManager mSensorManager;
+    private static Sensor mAccelerometer;
+    private static Sensor mMagneticSensor;
+    private boolean mLastMagnetometerSet;
+    private boolean mLastAccelerometerSet;
 
     private final float[] accelerometerReading = new float[3];
     private final float[] magnetometerReading = new float[3];
     private final float[] rotationMatrix = new float[9];
     private final float[] orientationAngles = new float[3];
+    private static int grados;
+    private static String cardinal;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,17 +45,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     @Override
     protected void onResume() {
-
         super.onResume();
-        accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        magneticField = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mMagneticSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
-        if(accelerometer!= null) {
-            mSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+        if(mAccelerometer!= null) {
+            mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
         }
 
-        if(magneticField!= null) {
-            mSensorManager.registerListener(this, magneticField, SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+        if(mMagneticSensor!= null) {
+            mSensorManager.registerListener(this, mMagneticSensor, SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
         }
     }
 
@@ -63,8 +66,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onPause() {
         super.onPause();
         // Retirar el registro cuando la aplicaciónno no está visible
-        mSensorManager.unregisterListener(this,accelerometer);
-        mSensorManager.unregisterListener(this, magneticField);
+        if (mAccelerometer != null)
+            mSensorManager.unregisterListener(this,mMagneticSensor);
+        if (mMagneticSensor != null)
+            mSensorManager.unregisterListener(this, mMagneticSensor);
         //Evita el consumo innecesario de bateria
         mSensorManager.unregisterListener(this);
     }
@@ -75,68 +80,60 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onSensorChanged(SensorEvent event) {
 
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            System.arraycopy(event.values, 0, accelerometerReading, 0, accelerometerReading.length);
-        } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+        if (event.sensor == mMagneticSensor) {
             System.arraycopy(event.values, 0, magnetometerReading, 0, magnetometerReading.length);
+            mLastMagnetometerSet = true;
+        } else if (event.sensor == mAccelerometer) {
+            System.arraycopy(event.values, 0, accelerometerReading, 0, accelerometerReading.length);
+            mLastAccelerometerSet = true;
         }
-    }
 
-    /**
-     *Nos da la orientacion en grados
-     */
-    public void posicionGrados(View view){
+        if (mLastAccelerometerSet && mLastMagnetometerSet) {
+            SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerReading, magnetometerReading);
+            SensorManager.getOrientation(rotationMatrix, orientationAngles);
 
-        SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerReading, magnetometerReading);
-        SensorManager.getOrientation(rotationMatrix, orientationAngles);
+            double radianes = orientationAngles[0] + Math.PI;
+            grados = ((int) Math.toDegrees(radianes));
+            //String gradosString = Integer.toString(grados);
 
-        double radianes = orientationAngles[0] + Math.PI;
-        int grados = ((int) Math.toDegrees(radianes));
-
-        TextView textoGrados = (TextView) findViewById(R.id.grados);
-        String gradosString = Integer.toString(grados);
-        textoGrados.setText( gradosString + "º");
-
-
-    }
-
-    /**
-     * Nos da el punto cardinal mas cercano
-     */
-    public void puntoCardinal(View view){
+            TextView textoGrados = (TextView) findViewById(R.id.grados);
+            textoGrados.setText( grados + "º");
+        }
 
         TextView textoGrados = (TextView) findViewById(R.id.grados);
-        String gradosString = textoGrados.getText().toString();
-        int grados = Integer.parseInt(gradosString);
-
         TextView puntoCardinal = (TextView) findViewById(R.id.pCardinal);
 
-        if(grados <= 23 || grados >= 337){
-            //SUR
-            puntoCardinal.setText("SUR");
-        }else if(grados > 23 && grados < 68){
-            //Suroeste
-            puntoCardinal.setText("Suroeste");
-        }else if(grados >= 68 && grados <= 113){
-            //OESTE
-            puntoCardinal.setText("OESTE");
-        }else if(grados > 113 && grados < 158){
-            //Noroeste
-            puntoCardinal.setText("Noroeste");
-        }else if(grados >= 158 && grados <= 203){
-            //NORTE
-            puntoCardinal.setText("NORTE");
-        }else if(grados > 203 && grados < 248){
-            //Noreste
-            puntoCardinal.setText("Noreste");
-        }else if(grados >= 248 && grados <= 293){
-            //ESTE
-            puntoCardinal.setText("ESTE");
-        }else if(grados > 293 && grados < 337){
-            //Sureste
-            puntoCardinal.setText("Sureste");
+        if (textoGrados != null) {
+            if (grados > 23 && grados < 68) {
+                //Suroeste
+                cardinal = "Suroeste";
+            } else if (grados >= 68 && grados <= 113) {
+                //OESTE
+                cardinal = "OESTE";
+            } else if (grados > 113 && grados < 158) {
+                //Noroeste
+                cardinal = "Noroeste";
+            } else if (grados >= 158 && grados <= 203) {
+                //NORTE
+                cardinal = "NORTE";
+            } else if (grados > 203 && grados < 248) {
+                //Noreste
+                cardinal = "Noreste";
+            } else if (grados >= 248 && grados <= 293) {
+                //ESTE
+                cardinal = "ESTE";
+            } else if (grados > 293 && grados < 337) {
+                //Sureste
+                cardinal = "Sureste";
+            } else if ((grados <= 23 && grados >= 0) || (grados >=337 && grados <= 360)){
+                //SUR
+                cardinal = "SUR";
+            }
+
+            puntoCardinal.setText(cardinal);
         }
     }
+
 
 
     /**
@@ -173,11 +170,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         Intent intent = new Intent(Intent.ACTION_SEND);
 
         TextView tw = (TextView) findViewById(R.id.rText);
-        String texto = tw.getText().toString();
-        intent.putExtra(Intent.EXTRA_TEXT, texto);
-
-        EditText et = (EditText) findViewById(R.id.wText);
-        String ubicacion = et.getText().toString();
+        String ubicacion = tw.getText().toString();
+        intent.putExtra(Intent.EXTRA_TEXT, ubicacion);
 
         if (ubicacion.isEmpty()) {
             String error1 = "No hay ubicacion";
