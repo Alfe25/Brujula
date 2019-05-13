@@ -179,8 +179,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }else {
             intent.putExtra(Intent.EXTRA_TEXT, ubicacion);
             intent.setType("test/plain");
-            startActivity(intent);
         }
+            startActivity(intent);
     }
 
     /**
