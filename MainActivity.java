@@ -162,26 +162,25 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     /**
      * Comparte la ubicacion con apps del dispositivo
-     *
+     * Si no hay ubicacion devuelve un toast
      * @param view
      */
     public void compartirUbicacion(View view) {
 
         Intent intent = new Intent(Intent.ACTION_SEND);
 
-        TextView tw = (TextView) findViewById(R.id.rText);
-        String ubicacion = tw.getText().toString();
-        intent.putExtra(Intent.EXTRA_TEXT, ubicacion);
+        TextView tv = (TextView) findViewById(R.id.rText);
+        String ubicacion = tv.getText().toString();
 
         if (ubicacion.isEmpty()) {
             String error1 = "No hay ubicacion";
             Toast.makeText(this, error1, Toast.LENGTH_SHORT).show();    //mensaje de "error"
             return;
+        }else {
+            intent.putExtra(Intent.EXTRA_TEXT, ubicacion);
+            intent.setType("test/plain");
+            startActivity(intent);
         }
-
-        intent.setType("test/plain");
-        startActivity(intent);
-
     }
 
     /**
